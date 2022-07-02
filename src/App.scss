@@ -1,7 +1,33 @@
 .App {
  padding: 0;
  margin: 0;
- height: 100vh;
- width: 100vw;
-overflow: hidden;
+ height: 100vh !important;
+ width: 100vw !important;
+ overflow-y: hidden;
+
+
+.mapboxgl-canvas{
+ height: 100vh !important;
+
+}
+ .mapboxgl-popup-close-button {
+  top: -190px;
+  left: 200px;
+  position: relative;
+  background-color: unset;
+  border: unset;
+  font-size: 30px;
+ }
+.mapboxgl-ctrl{
+  display: none;
+}
+
+ .rounded-circle{
+  height: 50px;
+  width: 50px;
+}
+}
+
+.modal-content {
+ width: fit-content !important;
 }
