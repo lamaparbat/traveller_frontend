@@ -44,16 +44,22 @@ const ProfileBtn = () => {
   }
  }
 
+ // on each mounting, validate the cache
  useEffect(() => {
   cacheValidation()
  }, []);
 
  //login
  const login = async () => {
+  if (loginData.email.length < 1 && loginData.password < 1)
+   return toast.error("Field is empty !!")   
+  
   try {
    const res = await axios.post("http://localhost:8000/traveller/login", { email: loginData.email, password: loginData.password });
    const { data, token } = res.data
 
+   toast.success("Login succesfull !!");
+   
    // save data to browser cache
    localStorage.setItem("traveller", JSON.stringify({ data, token }));
 
@@ -64,9 +70,27 @@ const ProfileBtn = () => {
   }
  }
 
- //signup
- const loadSignupForm = async () => {
-  setFormType("signup");
+ // signup
+ const signup = async () => {
+  if (signupData.email.length < 1 && signupData.password < 1 && signupData.username.length < 1)
+   return toast.error("Field is empty !!");
+  
+  try {
+   const res = await axios.post("http://localhost:8000/traveller/signup", { username:signupData.username,email: signupData.email, password: signupData.password });
+   
+   toast.success("Account successfully created !!");
+   
+   //refresh the cache
+   window.location.assign("")
+  } catch (error) {
+   toast.error("Failed to create account !!");
+  }
+  
+ }
+ 
+ // load another form component
+ const replaceComponent = (form_type) => {
+  setFormType(form_type);
  }
 
  //logout
@@ -90,9 +114,9 @@ const ProfileBtn = () => {
  }
 
  return (
-  <div className='my-2 d-flex flex-row-reverse'>
+  <div className='container-fluid py-4 px-5 modal position-absolute d-flex flex-row-reverse'>
    <Button variant="primary" className='rounded-circle d-flex justify-content-center align-items-center pb-0' onClick={handleShow}>
-    <h2>P</h2>
+       <h2>{Object.keys(cache).length > 0 ? cache.data.name[0].toUpperCase():'0'}</h2>
    </Button>
    {
     form_type !== "signup" ? <Modal show={show} onHide={handleClose}>
@@ -126,7 +150,7 @@ const ProfileBtn = () => {
        Object.keys(cache).length === 0 ?
         <>
          <Button className='px-4' variant="danger" onClick={login}>Login</Button>
-         <Button className='px-4 bg-light text-danger' variant="danger" onClick={loadSignupForm}>Create an account ?</Button>
+         <Button className='px-4 bg-light text-danger' variant="danger" onClick={() => replaceComponent("signup")}>Create an account ?</Button>
         </> : <Button variant="danger" onClick={logout}><FiLogOut className='me-1' />  Logout</Button>
 
       }
@@ -153,7 +177,8 @@ const ProfileBtn = () => {
      </Modal.Body>
      <Modal.Footer className='px-5'>
        <Button variant="secondary" id='close_btn' onClick={handleClose}>Close</Button>
-       <Button className='px-4' variant="danger" onClick={loadSignupForm}>Submit</Button>
+       <Button className='px-4' variant="danger" onClick={signup}>Submit</Button>
+       <Button className='px-4 bg-light text-danger' variant="danger" onClick={() => replaceComponent("login")}>Login</Button>
      </Modal.Footer>
     </Modal>
    }

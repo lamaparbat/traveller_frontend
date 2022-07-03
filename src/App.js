@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
 import { VscLocation } from 'react-icons/vsc';
 import ProfileBtn from '../src/Component/Modal.js';
@@ -6,115 +6,204 @@ import { ToastContainer, toast } from 'react-toastify';
 import './App.scss';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import axios from 'axios';
 
 function App() {
+  //refresh on each push
+  const [refresh, setRefresh] = useState(false);
+
+  // pinnedData
+  const [pinnedData, setPinnedData] = useState([]);
+
+  // form popup state
+  const [isFormVisible, setFormVisible] = useState(false);
+
   // viewport state
-  const [visualViewport, setVisualViewPort] = useState({
-    longitude: 85.300140,
-    latitude: 27.700769,
+  const [viewport, setVisualViewPort] = useState({
+    latitude: 45.4211,
+    longitude: -75.6903,
+    width: "100vw",
+    height: "100vh",
     zoom: 10
   });
 
   // on tracing new location
   const [isNewLocationTraced, setNewLocationTraced] = useState(false);
 
+  // get all the pinned location data
+  const fetchPinnedData = async () => {
+    try {
+      const res = await axios.create({
+        baseURL: "http://localhost:8000",
+        headers: {
+          "Authorization": `Bearer ${JSON.parse(localStorage.getItem("traveller")).token.access_token}`
+        }
+      }).get("/traveller/getPinnedData");
+
+      setPinnedData(res.data)
+    } catch (error) {
+      try {
+        if (error.response.data === "Token not found in server !!")
+          localStorage.clear();
+      } catch (error) {
+        return;
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchPinnedData()
+  }, []);
+
+
   // traced location data
   const [tracedLocation, setTracedLocation] = useState({
     username: "",
     title: "",
     desc: "",
-    longitude: visualViewport.longitude,
-    latitude: visualViewport.latitude,
+    lon: 85.32009563507137,
+    lat: 27.709013714450748,
     zoom: 4
-  })
-
+  });
 
   //track new location
   var throttle = false;
+  
   const trackNewLocation = (e) => {
     // if the call is already in callstack queue then denied the request
     if (throttle)
       return;
-    
-    setTimeout(() => {   
-      console.log("hacker")
+
+    setTimeout(() => {
       try {
         if (Object.keys(JSON.parse(localStorage.getItem("traveller"))).length > 0) {
           setNewLocationTraced(true)
           setTracedLocation({
             ...tracedLocation,
-            longitude: e.lngLat.lng,
-            latitude: e.lngLat.lat
+            username: JSON.parse(localStorage.getItem("traveller")).data.name,
+            lon: e.lngLat.lng,
+            lat: e.lngLat.lat
           });
         }
       } catch (error) {
         toast.error("Please login to mark the location !!")
       }
-      
+
       throttle = true;
-    }, 3000)
+    }, 1000)
   }
 
 
   // save pinned location
-  const savePin = () => {
-    console.log(tracedLocation)
+  const savePin = async () => {
+    try {
+      // send data to the backend
+      const res = await axios.create({
+        baseURL: "http://localhost:8000",
+        timeout: 1000,
+        headers: {
+          "Authorization": `Bearer ${JSON.parse(localStorage.getItem("traveller")).token.access_token}`
+        }
+      }).post("/traveller/pins", tracedLocation);
 
-    setNewLocationTraced(false)
+      toast.success("Location pinned successfully.");
+
+      return setNewLocationTraced(false);
+    } catch (error) {
+      if (error.response.data === "Token not found in server !!")
+        localStorage.clear();
+
+      //refresh page
+      return window.location.assign("");
+    }
   }
 
   return (
-    <div className="App container-fluid">
+    <div className="App container-fluid p-0 m-0">
       <ProfileBtn />
       <Map
-        mapboxAccessToken="pk.eyJ1IjoicGFyYmF0MTIzIiwiYSI6ImNsNTM4eXQ0ZTBodXczY3F4bXkyeHp4dmMifQ.bslOh187v-x19_cgKfa23Q"
-        initialViewState={visualViewport}
+        mapboxAccessToken="pk.eyJ1IjoicGFyYmF0MTIzIiwiYSI6ImNsNTVla3I4dzE4Z2czY3FpdHpiZmNvY24ifQ.QbrYyf84eP84fn_loVxEdw"
+        initialViewState={{
+          longitude: 85.300140,
+          latitude: 27.700769,
+          zoom: 11
+        }}
+        style={{ width: "100vw", height: "100vh" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
-        onDblClick={trackNewLocation}
+        onDblClick={location => {
+          setFormVisible(true);
+          setTracedLocation({ ...tracedLocation, lat: location.lngLat.lat, lon: location.lngLat.lng, username: JSON.parse(localStorage.getItem("traveller")).data.name })
+        }}
       >
+
+        {
+          pinnedData && pinnedData.map((data, index) => {
+            console.log(data)
+            return (
+              <div key={index}>
+                <Marker
+                  longitude={data.lon}
+                  latitude={data.lat}
+                  draggable={true}
+                >
+                  <VscLocation
+                    style={{
+                      fontSize: tracedLocation.zoom * 10,
+                      color: data.username === JSON.parse(localStorage.getItem("traveller")).data.name ? "red" : "green"
+                    }} />
+                </Marker>
+                <Popup
+                  longitude={data.lon}
+                  latitude={data.lat}
+                  anchor="bottom"
+                  style={{
+                    background: data.username === JSON.parse(localStorage.getItem("traveller")).data.name ? "red" : "green",
+                    color: data.username === JSON.parse(localStorage.getItem("traveller")).data.name ? "red" : "green"
+                  }}
+                >
+                  <h6 className='py-0'>{data.title}</h6>
+                  <span>{data.desc}</span>
+                </Popup>
+              </div>
+            )
+          })
+        }
+
+        {/* default marker */}
         <Marker
-          longitude={tracedLocation.longitude}
-          latitude={tracedLocation.latitude}
+          longitude={tracedLocation.lon}
+          latitude={tracedLocation.lat}
           draggable={true}
+          onDrag={location => setTracedLocation({ ...tracedLocation, lat: location.lngLat.lat, lon: location.lngLat.lng })}
         >
           <VscLocation
             style={{
               fontSize: tracedLocation.zoom * 10,
-              color: "red",
-              marginTop: "-1640px",
-              marginLeft: "430px"
+              color: "red"
             }} />
         </Marker>
 
         {
-          isNewLocationTraced && <Popup
-            longitude={tracedLocation.longitude}
-            latitude={tracedLocation.latitude}
-            anchor="left"
-            style={{
-              marginTop: "-930px",
-              marginLeft: "20px"
-            }}
-            closeButton={true}
-            closeOnClick={false}
-            onClose={() => setNewLocationTraced(false)}
+          isFormVisible && <Popup
+            latitude={tracedLocation.lat}
+            longitude={tracedLocation.lon}
+            anchor="bottom"
           >
-            <div className='form p-2 pt-4 d-flex flex-column bg-info rounded-1'>
-              <input
-                type="text"
-                placeholder='Enter location title'
-                className='form-control py-1 mt-4 my-2 shadow-none border-danger text-danger'
-                onChange={(e) => setTracedLocation({ ...tracedLocation, title: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder='Enter location description'
-                className='form-control py-1 mb-2 shadow-none border-danger text-danger'
-                value={tracedLocation.desc}
-                onChange={(e) => setTracedLocation({ ...tracedLocation, desc: e.target.value })}
-              />
-              <button className='btn btn-danger py-1 mb-2' onClick={savePin}>Save</button>
-            </div>
+            <input
+              type="text"
+              placeholder='Enter location title'
+              className='form-control py-1 mt-4 my-2 shadow-none border-danger text-danger'
+              onChange={(e) => setTracedLocation({ ...tracedLocation, title: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder='Enter location description'
+              className='form-control py-1 mb-2 shadow-none border-danger text-danger'
+              value={tracedLocation.desc}
+              onChange={(e) => setTracedLocation({ ...tracedLocation, desc: e.target.value })}
+            />
+            <button className='btn btn-danger py-1 mb-2' onClick={savePin}>Save</button>
           </Popup>
         }
       </Map>

@@ -1,33 +1,19 @@
 .App {
- padding: 0;
- margin: 0;
- height: 100vh !important;
- width: 100vw !important;
- overflow-y: hidden;
 
+  // model (child component)
+  .modal {
+    height: fit-content;
+  }
 
-.mapboxgl-canvas{
- height: 100vh !important;
+  .modal-content {
+    width: 500px !important;
+  }
 
-}
- .mapboxgl-popup-close-button {
-  top: -190px;
-  left: 200px;
-  position: relative;
-  background-color: unset;
-  border: unset;
-  font-size: 30px;
- }
-.mapboxgl-ctrl{
-  display: none;
-}
-
- .rounded-circle{
-  height: 50px;
-  width: 50px;
-}
-}
-
-.modal-content {
- width: 500px !important;
+  .rounded-circle {
+    height: 50px;
+    width: 50px;
+    box-shadow: 0px 0px 9px -1px rgba(110, 37, 37, 0.75);
+    -webkit-box-shadow: 0px 0px 9px -1px rgba(110, 37, 37, 0.75);
+    -moz-box-shadow: 0px 0px 9px -1px rgba(110, 37, 37, 0.75);
+  }
 }
