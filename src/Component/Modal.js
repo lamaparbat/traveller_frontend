@@ -36,7 +36,8 @@ const ProfileBtn = () => {
  const cacheValidation = () => {
   try {
    const cache = JSON.parse(localStorage.getItem("traveller"));
-   if (cache === null || undefined)
+    if (cache === null || undefined)
+    setShow(true)
     return setFormType("login");
    return setCache(cache);
   } catch (error) {
@@ -116,7 +117,7 @@ const ProfileBtn = () => {
  return (
   <div className='container-fluid py-4 px-5 modal position-absolute d-flex flex-row-reverse'>
    <Button variant="primary" className='rounded-circle d-flex justify-content-center align-items-center pb-0' onClick={handleShow}>
-       <h2>{Object.keys(cache).length > 0 ? cache.data.name[0].toUpperCase():'0'}</h2>
+       <h2 id='account_name'>{Object.keys(cache).length > 0 ? cache.data.name[0].toUpperCase():'0'}</h2>
    </Button>
    {
     form_type !== "signup" ? <Modal show={show} onHide={handleClose}>

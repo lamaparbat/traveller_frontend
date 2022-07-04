@@ -62,14 +62,14 @@ function App() {
     username: "",
     title: "",
     desc: "",
-    lon: 85.32009563507137,
-    lat: 27.709013714450748,
+    lon: 85.5,
+    lat: 27.6,
     zoom: 4
   });
 
   //track new location
   var throttle = false;
-  
+
   const trackNewLocation = (e) => {
     // if the call is already in callstack queue then denied the request
     if (throttle)
@@ -119,6 +119,17 @@ function App() {
     }
   }
 
+  // update traced location on db lick map
+  const updateTracedLocation = (location) => {
+    try {
+      setFormVisible(true);
+      setTracedLocation({ ...tracedLocation, lat: location.lngLat.lat, lon: location.lngLat.lng, username: JSON.parse(localStorage.getItem("traveller")).data.name })
+    } catch (error) {
+      toast.error("Please login first !")
+      return setFormVisible(false);
+    }
+  }
+  
   return (
     <div className="App container-fluid p-0 m-0">
       <ProfileBtn />
@@ -131,21 +142,17 @@ function App() {
         }}
         style={{ width: "100vw", height: "100vh" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
-        onDblClick={location => {
-          setFormVisible(true);
-          setTracedLocation({ ...tracedLocation, lat: location.lngLat.lat, lon: location.lngLat.lng, username: JSON.parse(localStorage.getItem("traveller")).data.name })
-        }}
+        onDblClick={location => updateTracedLocation(location)}
       >
 
         {
           pinnedData && pinnedData.map((data, index) => {
-            console.log(data)
             return (
               <div key={index}>
                 <Marker
                   longitude={data.lon}
                   latitude={data.lat}
-                  draggable={true}
+                  draggable={false}
                 >
                   <VscLocation
                     style={{
@@ -157,6 +164,8 @@ function App() {
                   longitude={data.lon}
                   latitude={data.lat}
                   anchor="bottom"
+                  closeOnClick={false}
+                  closeButton={false}
                   style={{
                     background: data.username === JSON.parse(localStorage.getItem("traveller")).data.name ? "red" : "green",
                     color: data.username === JSON.parse(localStorage.getItem("traveller")).data.name ? "red" : "green"
@@ -181,14 +190,19 @@ function App() {
             style={{
               fontSize: tracedLocation.zoom * 10,
               color: "red"
-            }} />
+            }}
+            onDoubleClick={() => {
+              setFormVisible(true)
+            }}
+          />
         </Marker>
-
         {
           isFormVisible && <Popup
             latitude={tracedLocation.lat}
             longitude={tracedLocation.lon}
             anchor="bottom"
+            closeOnClick={false}
+            closeButton={false}
           >
             <input
               type="text"
