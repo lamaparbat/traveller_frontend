@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker, Popup, Layer, Source } from 'react-map-gl';
 import { VscLocation } from 'react-icons/vsc';
 import ProfileBtn from '../src/Component/Modal.js';
 import { ToastContainer, toast } from 'react-toastify';
@@ -8,6 +8,7 @@ import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import axios from 'axios';
+import mapboxgl from 'mapbox-gl';
 
 function App() {
   //refresh on each push
@@ -66,34 +67,7 @@ function App() {
     lat: 27.6,
     zoom: 4
   });
-
-  //track new location
-  var throttle = false;
-
-  const trackNewLocation = (e) => {
-    // if the call is already in callstack queue then denied the request
-    if (throttle)
-      return;
-
-    setTimeout(() => {
-      try {
-        if (Object.keys(JSON.parse(localStorage.getItem("traveller"))).length > 0) {
-          setNewLocationTraced(true)
-          setTracedLocation({
-            ...tracedLocation,
-            username: JSON.parse(localStorage.getItem("traveller")).data.name,
-            lon: e.lngLat.lng,
-            lat: e.lngLat.lat
-          });
-        }
-      } catch (error) {
-        toast.error("Please login to mark the location !!")
-      }
-
-      throttle = true;
-    }, 1000)
-  }
-
+  
 
   // save pinned location
   const savePin = async () => {
@@ -121,6 +95,7 @@ function App() {
 
   // update traced location on db lick map
   const updateTracedLocation = (location) => {
+    console.log(location)
     try {
       setFormVisible(true);
       setTracedLocation({ ...tracedLocation, lat: location.lngLat.lat, lon: location.lngLat.lng, username: JSON.parse(localStorage.getItem("traveller")).data.name })
@@ -130,6 +105,18 @@ function App() {
     }
   }
   
+  var dataOne = {
+    type: "Feature",
+    properties: {},
+    geometry: {
+      type: "LineString",
+      coordinates: [
+        [86.08185436454727, 27.324242058595857],
+        [85.93153797192207, 26.732301896483165]
+      ]
+    }
+  };
+
   return (
     <div className="App container-fluid p-0 m-0">
       <ProfileBtn />
@@ -220,8 +207,23 @@ function App() {
             <button className='btn btn-danger py-1 mb-2' onClick={savePin}>Save</button>
           </Popup>
         }
+        <Source id="polylineLayer" type="geojson" data={dataOne}>
+          <Layer
+            id="lineLayer"
+            type="line"
+            source="my-data"
+            layout={{
+              "line-join": "round",
+              "line-cap": "round",
+            }}
+            paint={{
+              "line-color": "red",
+              "line-width": 2
+            }}
+          />
+          </Source>
       </Map>
-      <ToastContainer />
+      <ToastContainer position='top-center' />
     </div>
   );
 }
