@@ -6,3 +6,10 @@
 3. Fill up the form (incl. title, description)
 4. Save the file 
 5. You will see the locations with description on the map
+
+
+
+## Features
+1. Login
+2. Signup
+3. Dashboard
